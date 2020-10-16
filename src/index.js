@@ -125,7 +125,7 @@ window.onload = async () => {
 		// sig('leave', {}, true)
 	});
 
-	alert("Allow YORB to access your webcam for the full experience");
+	// alert("Allow YORB to access your webcam for the full experience");
 	await startCamera();
 
 	var startButton = document.getElementById('startButton');

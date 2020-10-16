@@ -50,7 +50,12 @@ const https = require("https");
 var express = require('express'),
     http = require('http');
 var app = express();
-var server = http.createServer(app);
+// var server = http.createServer(app);
+var server = https.createServer({
+  cert: fs.readFileSync(`${__dirname}/cert/localhost+1.pem`),
+  key: fs.readFileSync(`${__dirname}/cert/localhost+1-key.pem`),
+}, app);
+
 var io = require('socket.io').listen(server);
 
 app.use(express.static(__dirname + "/public"));

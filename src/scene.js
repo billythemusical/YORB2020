@@ -8,12 +8,15 @@
 
 import { pauseAllConsumersForPeer, resumeAllConsumersForPeer, hackToRemovePlayerTemporarily } from './index.js'
 
+
 const THREE = require('./libs/three.min.js');
 const Stats = require('./libs/stats.min.js');
+const VRButton = require('./libs/VRButton.js'); //include the VR Button so that we can check whether the current browser supports WebXR and if it does, click and go into VR
 
 // slightly awkward syntax, but these statements add these functions to THREE
 require('./libs/GLTFLoader.js')(THREE);
 require('./libs/pointerLockControls.js')(THREE);
+
 
 class Scene {
 	constructor(
@@ -79,10 +82,12 @@ class Scene {
 		this.renderer = new THREE.WebGLRenderer({
 			antialiasing: true
 		});
+		this.renderer = new THREE.WebGLRenderer();
 		this.renderer.shadowMap.enabled = true;
 		this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 		this.renderer.setClearColor(new THREE.Color('lightblue'));
 		this.renderer.setSize(this.width, this.height);
+		
 
 		this.setupControls();
 		this.addLights();
@@ -91,7 +96,7 @@ class Scene {
 		this.loadBackground();
 		this.loadFloorModel();
 
-		this.setupSpringShow();
+		// this.setupSpringShow();
 
 		//Push the canvas to the DOM
 		domElement.append(this.renderer.domElement);
@@ -105,8 +110,14 @@ class Scene {
 		this.helperGrid.position.y = -0.1; // offset the grid down to avoid z fighting with floor
 		this.scene.add(this.helperGrid);
 
-		this.update();
-		this.render();
+		// this.update();
+		// this.render();
+
+		//------------------------------------------------VR stuff-----------------------------------------
+		this.renderer.xr.enabled = true;
+		// console.log(VRButton);
+		document.body.appendChild( VRButton.createButton( this.renderer ) );
+		this.updateVR();
 	}
 
 
@@ -1082,7 +1093,7 @@ class Scene {
 			textBoxMat = this.linkMaterial;
 		}
 
-		let filename = "images/project_thumbnails/" + _project.project_id + ".png";
+		let filename = "public/images/project_thumbnails/" + _project.project_id + ".png";
 
 		let tex = this.textureLoader.load(filename);
 		tex.wrapS = THREE.RepeatWrapping;
@@ -1729,6 +1740,35 @@ class Scene {
 		this.render();
 	}
 
+	//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//
+	//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//
+	// VRLoop ⭕️
+
+	updateVR() {
+		// requestAnimationFrame(() => this.update());
+		this.renderer.setAnimationLoop(() => this.updateVR()); //use setAnimationLoop instead of requestAnimationFrame
+
+		if (!this.paused) {
+			// this.updateControls();
+
+			// update volumes every X frames
+			this.frameCount++;
+			if (this.frameCount % 20 == 0) {
+				this.updateClientVolumes();
+				this.movementCallback();
+				this.highlightHyperlinks();
+			}
+			if (this.frameCount % 50 == 0) {
+				this.selectivelyPauseAndResumeConsumers();
+			}
+			this.detectCollisions();
+		}
+
+		this.stats.update();
+		this.updatePositions(); // other users
+		this.render();
+	}
+
 
 
 	//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//
@@ -1888,7 +1928,7 @@ class Scene {
 		// this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
 		// this.mouse.y = - (e.clientY / window.innerHeight) * 2 + 1;
 		// console.log("Click");
-		this.activateHighlightedProject();
+		// this.activateHighlightedProject();
 	}
 
 	//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//
